@@ -208,10 +208,12 @@ namespace Proxy
         public string UpdateHTML(byte[] responseData)
         {
             string html = Encoding.ASCII.GetString(responseData);
-            StringWriter writer = new StringWriter();
             string baseUrl = Url;
             HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
             doc.LoadHtml(html);
+            
+            
+            
             HtmlNodeCollection links = doc.DocumentNode.SelectNodes("//*[@src or @href or @action or @background or @lowsrc]");
             if (links == null) return html;
             Uri baseUri = new Uri(Url);
@@ -229,7 +231,28 @@ namespace Proxy
                     link.Attributes["lowsrc"].Value = ToAbsoluteProxy(link.Attributes["lowsrc"].Value, baseUri);
             }
 
-            doc.Save(writer);
+
+            // added to enable loading into same page instead of iframe 
+            var body = doc.DocumentNode.SelectSingleNode("//body").InnerHtml;
+            var head = doc.DocumentNode.SelectSingleNode("//head");
+
+            HtmlAgilityPack.HtmlDocument docProxy = new HtmlAgilityPack.HtmlDocument();
+            docProxy.LoadHtml(GetProxyHtml());
+            var headProxy = docProxy.DocumentNode.SelectSingleNode("//head");
+            //headProxy.InnerHtml = head;
+            headProxy.AppendChildren(head.ChildNodes);
+
+            var proxyContainerUrl = docProxy.DocumentNode.SelectSingleNode("//*[@id='proxy-container-url']");
+            proxyContainerUrl.Attributes["value"].Value = Url;
+            var bodyProxy = docProxy.DocumentNode.SelectSingleNode("//div[@id='proxy-container-content']");
+            bodyProxy.InnerHtml = body;
+            //HtmlNodeCollection links = bodyProxy.SelectNodes("//*[@src or @href or @action or @background or @lowsrc]"); 
+
+            StringWriter writer = new StringWriter();
+            docProxy.Save(writer);
+            
+            
+            //doc.Save(writer);
 
             string newHtml = writer.ToString();
             newHtml = UpdateUrl(newHtml, baseUri);
@@ -280,6 +303,105 @@ namespace Proxy
         public string DecodeUrl(string url)
         {
             return Encoding.UTF8.GetString(HttpServerUtility.UrlTokenDecode(url));
+        }
+        public string GetProxyHtml()
+        {
+            string html = @"<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <link href='/Content/bootstrap.min.css' rel='stylesheet' type='text/css' />
+    <style type='text/css'>
+        #proxy-container-spacer{
+            height:70px;
+            background-color:white;
+        }
+        #proxy-container-top {
+            width: 100%;
+            position: fixed;
+            display: block;
+            z-index: 2147483638;
+            top: 0;
+        }
+        #proxy-container-top h1{
+            margin:0px;
+        }
+        #proxy-container-content {
+            position: relative;
+            display: block;
+        }
+    </style>
+    <script type='text/javascript'>
+        function domReady(callback) {
+            arrDomReadyCallBacks.push(callback);
+            /* Mozilla, Chrome, Opera */
+            var browserTypeSet = false;
+            if (document.addEventListener) {
+                browserTypeSet = true;
+                document.addEventListener('DOMContentLoaded', excuteDomReadyCallBacks, false);
+            }
+            /* Safari, iCab, Konqueror */
+            if (/KHTML|WebKit|iCab/i.test(navigator.userAgent) && !browserTypeSet) {
+                browserTypeSet = true;
+                var DOMLoadTimer = setInterval(function () {
+                    if (/loaded|complete/i.test(document.readyState)) {
+                        //callback();
+                        excuteDomReadyCallBacks();
+                        clearInterval(DOMLoadTimer);
+                    }
+                }, 10);
+            }
+            /* Other web browsers */
+            if (!browserTypeSet) {
+                window.onload = excuteDomReadyCallBacks;
+            }
+        }
+        var arrDomReadyCallBacks = [];
+        function excuteDomReadyCallBacks() {
+            for (var i = 0; i < arrDomReadyCallBacks.length; i++) {
+                arrDomReadyCallBacks[i]();
+            }
+            arrDomReadyCallBacks = [];
+        }
+        function addEvent(obj, type, fn) {
+            if (obj.addEventListener)
+                obj.addEventListener(type, fn, false);
+            else if (obj.attachEvent)
+                obj.attachEvent('on' + type, function () { return fn.apply(obj, [window.event]); });
+        }
+        function ready() {
+            addEvent(document.getElementById('proxy-container-go-button'), 'click', function () {
+                var url = document.getElementById('proxy-container-url').value;
+                document.location.href = '/hidemyip.proxy?url=' + url;
+            });
+            addEvent(document.getElementById('proxy-container-url'), 'keypress', function () {
+                if (event.keyCode == 13) document.getElementById('proxy-container-go-button').click();
+            });
+        }
+        domReady(ready);
+    </script>
+</head>
+<body>
+    <div id='proxy-container-spacer'></div>
+    <div class='container body-content'>
+        <div class='container' id='proxy-container-top'>
+            <br />
+            <div class='row'>
+                <div class='col-xs-3'><h1>Hide My IP</h1></div>
+                <div class='col-xs-7'>
+                    <input type='text' class='form-control' id='proxy-container-url' value='http://www.bing.com' />
+                </div>
+                <div class='col-xs-2'>
+                    <button type='button' class='btn btn-default' id='proxy-container-go-button'>Hide My IP</button>
+                </div>
+            </div>
+        </div>
+        <div id='proxy-container-content'></div>
+    </div>
+</body>
+</html>";
+            return html;
         }
     }
     public class UrlReferrerCheck : IRouteConstraint
