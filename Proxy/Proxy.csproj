@@ -87,7 +87,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Content\Site.css" />
     <Content Include="Global.asax" />
     <Content Include="Web.config" />
   </ItemGroup>
@@ -119,6 +118,7 @@
   <ItemGroup>
     <Folder Include="App_Data\" />
     <Folder Include="Areas\proxy\Models\" />
+    <Folder Include="Content\" />
     <Folder Include="Controllers\" />
     <Folder Include="Models\" />
   </ItemGroup>

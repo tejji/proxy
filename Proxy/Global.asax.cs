@@ -14,9 +14,5 @@ namespace Proxy
             AreaRegistration.RegisterAllAreas();
             RouteConfig.RegisterRoutes(RouteTable.Routes);
         }
-        void Application_BeginRequest(Object sender, EventArgs e)
-        {
-            Console.WriteLine(Request.Url.ToString());
-        }
     }
 }
