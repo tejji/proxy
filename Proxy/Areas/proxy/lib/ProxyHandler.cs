@@ -231,29 +231,38 @@ namespace Proxy
                     link.Attributes["lowsrc"].Value = ToAbsoluteProxy(link.Attributes["lowsrc"].Value, baseUri);
             }
 
-
-            // added to enable loading into same page instead of iframe 
-            var body = doc.DocumentNode.SelectSingleNode("//body").InnerHtml;
-            var head = doc.DocumentNode.SelectSingleNode("//head");
-
-            HtmlAgilityPack.HtmlDocument docProxy = new HtmlAgilityPack.HtmlDocument();
-            docProxy.LoadHtml(GetProxyHtml());
-            var headProxy = docProxy.DocumentNode.SelectSingleNode("//head");
-            //headProxy.InnerHtml = head;
-            headProxy.AppendChildren(head.ChildNodes);
-
-            var proxyContainerUrl = docProxy.DocumentNode.SelectSingleNode("//*[@id='proxy-container-url']");
-            proxyContainerUrl.Attributes["value"].Value = Url;
-            var bodyProxy = docProxy.DocumentNode.SelectSingleNode("//div[@id='proxy-container-content']");
-            bodyProxy.InnerHtml = body;
-            //HtmlNodeCollection links = bodyProxy.SelectNodes("//*[@src or @href or @action or @background or @lowsrc]"); 
-
             StringWriter writer = new StringWriter();
-            docProxy.Save(writer);
-            
-            
-            //doc.Save(writer);
+            bool IsWithTopBar = true;
+            if (IsWithTopBar)
+            {
+                // added to enable loading into same page instead of iframe 
+                var body = doc.DocumentNode.SelectSingleNode("//body").InnerHtml;
+                var head = doc.DocumentNode.SelectSingleNode("//head");
 
+                HtmlAgilityPack.HtmlDocument docProxy = new HtmlAgilityPack.HtmlDocument();
+                docProxy.LoadHtml(GetProxyHtml());
+                var headProxy = docProxy.DocumentNode.SelectSingleNode("//head");
+                //headProxy.InnerHtml = head;
+                headProxy.AppendChildren(head.ChildNodes);
+
+                var proxyContainerUrl = docProxy.DocumentNode.SelectSingleNode("//*[@id='proxy-container-url']");
+                proxyContainerUrl.Attributes["value"].Value = Url;
+                var bodyProxy = docProxy.DocumentNode.SelectSingleNode("//div[@id='proxy-container-content']");
+                bodyProxy.InnerHtml = body;
+                //HtmlNodeCollection links = bodyProxy.SelectNodes("//*[@src or @href or @action or @background or @lowsrc]"); 
+
+                var doctype = doc.DocumentNode.SelectSingleNode("/comment()[starts-with(.,'<!DOCTYPE')]");
+                var doctypeProxy = docProxy.DocumentNode.SelectSingleNode("/comment()[starts-with(.,'<!DOCTYPE')]");
+                if (doctype != null) doctypeProxy.InnerHtml = doctype.OuterHtml;
+                else doctypeProxy.InnerHtml = null;
+
+
+                docProxy.Save(writer);
+            }
+            else
+            {
+                doc.Save(writer);
+            }
             string newHtml = writer.ToString();
             newHtml = UpdateUrl(newHtml, baseUri);
             return newHtml;
@@ -310,27 +319,106 @@ namespace Proxy
 <html>
 <head>
     <meta charset='utf-8' />
+    <title></title>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <link href='/Content/bootstrap.min.css' rel='stylesheet' type='text/css' />
     <style type='text/css'>
-        #proxy-container-spacer{
-            height:70px;
-            background-color:white;
+        body{
+            margin:0px;
+            padding:0px;
         }
+        #proxy-container-spacer {
+            height: 50px;
+        }
+
         #proxy-container-top {
             width: 100%;
             position: fixed;
             display: block;
             z-index: 2147483638;
-            top: 0;
+            top: 0 !important;
+            margin: auto;
+            padding: 10px 6%;
+            background-color: rgb(163, 27, 27);
         }
-        #proxy-container-top h1{
-            margin:0px;
+
+            #proxy-container-top h1 {
+                margin: 0px;
+                width: 10%;
+                float: left;
+                font-family: 'Curlz MT';
+                text-align: center;
+            }
+
+        #proxy-container-url {
+            width: 80%;
+            border: 1px solid #c4c4c4;
+            height: 25px;
+            font-size: 13px;
+            border-radius: 4px;
+            -moz-border-radius: 4px;
+            -webkit-border-radius: 4px;
+            box-shadow: 0px 0px 8px #d9d9d9;
+            -moz-box-shadow: 0px 0px 8px #d9d9d9;
+            -webkit-box-shadow: 0px 0px 8px #d9d9d9;
+            padding: 2px 10px;
         }
+
+            #proxy-container-url:focus {
+                outline: none;
+                border: 1px solid #7bc1f7;
+                box-shadow: 0px 0px 8px #7bc1f7;
+                -moz-box-shadow: 0px 0px 8px #7bc1f7;
+                -webkit-box-shadow: 0px 0px 8px #7bc1f7;
+            }
+
         #proxy-container-content {
             position: relative;
             display: block;
         }
+
+        #proxy-container-go-button {
+            -moz-box-shadow: 0px 10px 14px -7px #3e7327;
+            -webkit-box-shadow: 0px 10px 14px -7px #3e7327;
+            box-shadow: 0px 10px 14px -7px #3e7327;
+            background: -webkit-gradient(linear, left top, left bottom, color-stop(0.05, #77b55a), color-stop(1, #72b352));
+            background: -moz-linear-gradient(top, #77b55a 5%, #72b352 100%);
+            background: -webkit-linear-gradient(top, #77b55a 5%, #72b352 100%);
+            background: -o-linear-gradient(top, #77b55a 5%, #72b352 100%);
+            background: -ms-linear-gradient(top, #77b55a 5%, #72b352 100%);
+            background: linear-gradient(to bottom, #77b55a 5%, #72b352 100%);
+            filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#77b55a', endColorstr='#72b352',GradientType=0);
+            background-color: #77b55a;
+            -moz-border-radius: 4px;
+            -webkit-border-radius: 4px;
+            border-radius: 4px;
+            border: 1px solid #4b8f29;
+            display: inline-block;
+            cursor: pointer;
+            color: #ffffff;
+            font-family: arial;
+            font-weight: bold;
+            padding: 6px 12px;
+            text-decoration: none;
+            text-shadow: 0px 1px 0px #5b8a3c;
+            width: 95px;
+            font-size: 13px;
+        }
+
+            #proxy-container-go-button :hover {
+                background: -webkit-gradient(linear, left top, left bottom, color-stop(0.05, #72b352), color-stop(1, #77b55a));
+                background: -moz-linear-gradient(top, #72b352 5%, #77b55a 100%);
+                background: -webkit-linear-gradient(top, #72b352 5%, #77b55a 100%);
+                background: -o-linear-gradient(top, #72b352 5%, #77b55a 100%);
+                background: -ms-linear-gradient(top, #72b352 5%, #77b55a 100%);
+                background: linear-gradient(to bottom, #72b352 5%, #77b55a 100%);
+                filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#72b352', endColorstr='#77b55a',GradientType=0);
+                background-color: #72b352;
+            }
+
+            #proxy-container-go-button :active {
+                position: relative;
+                top: 1px;
+            }
     </style>
     <script type='text/javascript'>
         function domReady(callback) {
@@ -384,21 +472,11 @@ namespace Proxy
 </head>
 <body>
     <div id='proxy-container-spacer'></div>
-    <div class='container body-content'>
-        <div class='container' id='proxy-container-top'>
-            <br />
-            <div class='row'>
-                <div class='col-xs-3'><h1>Hide My IP</h1></div>
-                <div class='col-xs-7'>
-                    <input type='text' class='form-control' id='proxy-container-url' value='http://www.bing.com' />
-                </div>
-                <div class='col-xs-2'>
-                    <button type='button' class='btn btn-default' id='proxy-container-go-button'>Hide My IP</button>
-                </div>
-            </div>
-        </div>
-        <div id='proxy-container-content'></div>
+    <div id='proxy-container-top'>
+        <input type='text' id='proxy-container-url' value='http://www.bing.com' />
+        <button type='button' id='proxy-container-go-button'>Hide My IP</button>
     </div>
+    <div id='proxy-container-content'></div>
 </body>
 </html>";
             return html;
